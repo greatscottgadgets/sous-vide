@@ -24,14 +24,16 @@ start_time = 0
 current_temp = 0
 timer_started = False
 
+gf = GreatFET()
 
 def init(device):
     print("init")
-    turn_on_heater()
+    # turn_on_heater()
     preparing(current_temp, time_elapsed, timer_started, start_time, device)
 
 
 def preparing(current_temp, time_elapsed, timer_started, start_time, device):
+    turn_on_heater()
     while current_temp < TARGET_TEMP:
         print("heating up")
         data = device.vendor_request_in(vendor_requests.DS18B20_READ, length=2)
@@ -53,7 +55,7 @@ def preparing(current_temp, time_elapsed, timer_started, start_time, device):
         time_elapsed = get_time_elapsed(start_time)
         turn_off_heater()
         cooking(current_temp, start_time, time_elapsed, device)
-    # TODO: might be able to get rid of this last elif statement but will keep it for now
+    # TODO: might be redundant but will keep in case of unknown scenario
     elif timer_started is True and time_elapsed >= COOK_TIME:
         turn_off_heater()
         done()
@@ -80,10 +82,16 @@ def done():
 
 def turn_on_heater():
     print("heater turned on")
+    # set J2 Pin 8 as output, high
+    gf.gpio.setup((2, 2), 1)
+    gf.gpio.output((2, 2), 1)
 
 
 def turn_off_heater():
     print("heater turned off")
+    # set J2 Pin 8 as output, low
+    gf.gpio.setup((2, 2), 1)
+    gf.gpio.output((2, 2), 0)
 
 
 def get_start_time():

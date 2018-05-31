@@ -14,9 +14,9 @@ from greatfet import GreatFET
 from greatfet.utils import log_silent, log_verbose
 from greatfet.protocol import vendor_requests
 
-COOK_TIME = 20
-TARGET_TEMP = 27
-MIN_TEMP = 26.9
+COOK_TIME = 3600
+TARGET_TEMP = 80
+MIN_TEMP = 76
 MAX_TEMP = 85
 
 time_elapsed = 0

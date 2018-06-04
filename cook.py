@@ -8,6 +8,7 @@ import argparse
 import errno
 import sys
 import time
+import csv
 
 import greatfet
 from greatfet import GreatFET
@@ -15,64 +16,74 @@ from greatfet.utils import log_silent, log_verbose
 from greatfet.protocol import vendor_requests
 
 COOK_TIME = 3600
-TARGET_TEMP = 80
-MIN_TEMP = 76
-MAX_TEMP = 85
+TARGET_TEMPERATURE = 82
+MIN_TEMPERATURE = 79
+MAX_TEMPERATURE = 85
 
-time_elapsed = 0
-start_time = 0
-current_temp = 0
+cook_time_elapsed = 0
+cook_start_time = 0
+
+sleep_time = 30
+
+current_temperature = 0
 timer_started = False
 
 gf = GreatFET()
 
 def init(device):
     print("init")
-    # turn_on_heater()
-    preparing(current_temp, time_elapsed, timer_started, start_time, device)
+    preparing(current_temperature, cook_time_elapsed, timer_started, cook_start_time, device)
 
 
-def preparing(current_temp, time_elapsed, timer_started, start_time, device):
+def preparing(current_temperature, cook_time_elapsed, timer_started, cook_start_time, device):
     turn_on_heater()
-    while current_temp < TARGET_TEMP:
+    startup_time = time.time()
+
+    while current_temperature < TARGET_TEMPERATURE:
         print("heating up")
         data = device.vendor_request_in(vendor_requests.DS18B20_READ, length=2)
-        current_temp = (data[1] << 8 | data[0]) / 16.0
-        print(time.strftime("%H:%M:%S"), current_temp)
+        current_temperature = (data[1] << 8 | data[0]) / 16.0
+
+        log_time_temperature(current_temperature)
+        print(time.strftime("%H:%M:%S"), current_temperature)
+
         if timer_started is True:
-            time_elapsed = get_time_elapsed(start_time)
-            if time_elapsed >= COOK_TIME:
+            cook_time_elapsed = get_cook_time_elapsed(cook_start_time)
+            if cook_time_elapsed >= COOK_TIME:
                 turn_off_heater()
                 done()
-        time.sleep(1)
+        time.sleep(sleep_time)
     if timer_started is False:
-        start_time = get_start_time()
+        cook_start_time = get_cook_start_time()
         timer_started = True
-        print("start time: " + str(start_time))
+        print("start time: " + str(cook_start_time))
         turn_off_heater()
-        cooking(current_temp, start_time, time_elapsed, device)
-    elif timer_started is True and time_elapsed < COOK_TIME:
-        time_elapsed = get_time_elapsed(start_time)
+        cooking(current_temperature, cook_time_elapsed, cook_start_time, device)
+    elif timer_started is True and cook_time_elapsed < COOK_TIME:
+        cook_time_elapsed = get_cook_time_elapsed(cook_start_time)
         turn_off_heater()
-        cooking(current_temp, start_time, time_elapsed, device)
+        cooking(current_temperature, cook_time_elapsed, cook_start_time, device)
     # TODO: might be redundant but will keep in case of unknown scenario
-    elif timer_started is True and time_elapsed >= COOK_TIME:
+    elif timer_started is True and cook_time_elapsed >= COOK_TIME:
         turn_off_heater()
         done()
 
 
-def cooking(current_temp, start_time, time_elapsed, device):
-    while current_temp > MIN_TEMP and time_elapsed < COOK_TIME:
+def cooking(current_temperature, cook_time_elapsed, cook_start_time, device):
+    while current_temperature > MIN_TEMPERATURE and cook_time_elapsed < COOK_TIME:
         print("cooking")
-        time_elapsed = get_time_elapsed(start_time)
+        cook_time_elapsed = get_cook_time_elapsed(cook_start_time)
         data = device.vendor_request_in(vendor_requests.DS18B20_READ, length=2)
-        current_temp = (data[1] << 8 | data[0]) / 16.0
-        print(time.strftime("%H:%M:%S"), current_temp)
-        time.sleep(1)
-    if time_elapsed >= COOK_TIME:
+        current_temperature = (data[1] << 8 | data[0]) / 16.0
+
+        log_time_temperature(current_temperature)
+        print(time.strftime("%H:%M:%S"), current_temperature)
+
+        time.sleep(sleep_time)
+    if cook_time_elapsed >= COOK_TIME:
         done()
-    elif current_temp <= MIN_TEMP:
-        preparing(current_temp, time_elapsed, True, start_time, device)
+    elif current_temperature <= MIN_TEMPERATURE:
+        preparing(current_temperature, cook_time_elapsed, True, cook_start_time, device)
 
 
 def done():
@@ -94,16 +105,23 @@ def turn_off_heater():
     gf.gpio.output((2, 2), 0)
 
 
-def get_start_time():
+def get_cook_start_time():
     print("starting timer")
     return time.time()
 
 
-def get_time_elapsed(start_time):
+def get_cook_time_elapsed(cook_start_time):
     current_time = time.time()
-    time_elapsed = current_time - start_time
-    print("time elapsed: " + str(time_elapsed))
-    return time_elapsed
+    cook_time_elapsed = current_time - cook_start_time
+    print("time elapsed: " + str(cook_time_elapsed))
+    return cook_time_elapsed
+
+
+def log_time_temperature(current_temperature):
+    log_time = time.strftime("%H:%M:%S")
+    with open('log.csv', 'a', newline='') as csvfile:
+        spamwriter = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+        spamwriter.writerow([log_time] + [current_temperature])
 
 
 def main():

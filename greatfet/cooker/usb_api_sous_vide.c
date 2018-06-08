@@ -21,16 +21,15 @@
 static struct gpio_t heaters = GPIO(2, 2);
 volatile bool sous_vide_mode_enabled = true;
 
-// constants
-#define COOK_TIME 70
-#define TARGET_TEMPERATURE 30
-#define MIN_TEMPERATURE 26
+#define COOK_TIME 3600
+#define TARGET_TEMPERATURE 82
+#define MIN_TEMPERATURE 79
 #define MAX_TEMPERATURE 85
 #define NOW_SEC ((RTC_HRS * 3600) + (RTC_MIN * 60) + RTC_SEC)
 #define DELAY_TIME 40000000
 
-static volatile uint32_t start_time = 0;		
-static volatile uint32_t time_elapsed = 0;	
+static uint32_t start_time = 0;		
+static uint32_t time_elapsed = 0;	
 static int16_t current_temperature = 0;
 static bool timer_started = false;
 static bool cook_completed = false;
@@ -126,13 +125,13 @@ void turn_off_heater(void) {
 	gpio_write(&heaters, 0);
 }
 
-volatile uint32_t get_start_time(void) {
+uint32_t get_start_time(void) {
 	return NOW_SEC;
 }
 
-volatile uint32_t get_time_elapsed() {
-	volatile uint32_t current_time = NOW_SEC;
-	volatile uint32_t time_elapsed = current_time - start_time;
+uint32_t get_time_elapsed() {
+	uint32_t current_time = NOW_SEC;
+	uint32_t time_elapsed = current_time - start_time;
 
 	return time_elapsed;
 }

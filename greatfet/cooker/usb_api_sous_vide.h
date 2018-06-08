@@ -17,8 +17,9 @@ void cooking();
 void done(void);
 void turn_on_heater(void);
 void turn_off_heater(void);
-volatile uint32_t get_start_time(void);
-volatile uint32_t get_time_elapsed();
+uint32_t get_start_time(void);
+uint32_t get_time_elapsed();
+void turn_leds_off(void);
 
 void sous_vide_mode(void);
 

@@ -21,13 +21,13 @@
 static struct gpio_t heaters = GPIO(2, 2);
 volatile bool sous_vide_mode_enabled = true;
 
-#define COOK_TIME 3600
-#define TARGET_TEMPERATURE 82
+#define COOK_TIME 60
 #define MIN_TEMPERATURE 79
-#define MAX_TEMPERATURE 85
+#define MAX_TEMPERATURE 90
 #define NOW_SEC ((RTC_HRS * 3600) + (RTC_MIN * 60) + RTC_SEC)
 #define DELAY_TIME 40000000
 
+static int16_t target_temperature = 85;
 static uint32_t start_time = 0;		
 static uint32_t time_elapsed = 0;	
 static int16_t current_temperature = 0;
@@ -42,9 +42,7 @@ void init_cook(void) {
 	led_on(LED1);
 	led_on(LED2);
 	// delay(DELAY_TIME);
-	
-	// TODO: need to wait for button press to start cook process
-	// TODO: need to reset cook_completed to false on button press
+
 	if(!cook_completed) {
 		heating_up();
 	}
@@ -58,8 +56,7 @@ void heating_up() {
 	turn_on_heater();
 	led_on(LED1);
 
-	while(current_temperature < TARGET_TEMPERATURE && time_elapsed < COOK_TIME) {
-		// heating up
+	while(current_temperature < target_temperature && time_elapsed < COOK_TIME) {
 		current_temperature = read_temperature();
 		current_temperature >>= 4;
 
@@ -76,6 +73,7 @@ void heating_up() {
 		turn_leds_off();
 		start_time = get_start_time();
 		timer_started = true;
+		target_temperature = 81;	// heat up to 85 initially, 82 for the rest of the cook
 		turn_off_heater();
 		cooking();
 	}
@@ -166,7 +164,7 @@ usb_request_status_t usb_vendor_request_sous_vide_start(
 {
 	if (stage == USB_TRANSFER_STAGE_SETUP) {
 		sous_vide_mode_enabled = true;
-    //led_off(HEARTBEAT_LED);
+    // led_off(HEARTBEAT_LED);
 		usb_transfer_schedule_ack(endpoint->in);
 	}
 	return USB_REQUEST_STATUS_OK;

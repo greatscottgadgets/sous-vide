@@ -16,14 +16,15 @@ from greatfet.utils import log_silent, log_verbose
 from greatfet.protocol import vendor_requests
 
 COOK_TIME = 3600
-TARGET_TEMPERATURE = 82
-MIN_TEMPERATURE = 79
-MAX_TEMPERATURE = 85
+MIN_TEMPERATURE = 78
+MAX_TEMPERATURE = 90
+
+target_temperature = 85
 
 cook_time_elapsed = 0
 cook_start_time = 0
 
-sleep_time = 30
+sleep_time = 10
 
 current_temperature = 0
 timer_started = False
@@ -32,14 +33,14 @@ gf = GreatFET()
 
 def init(device):
     print("init")
-    preparing(current_temperature, cook_time_elapsed, timer_started, cook_start_time, device)
+    preparing(current_temperature, cook_time_elapsed, timer_started, cook_start_time, target_temperature, device)
 
 
-def preparing(current_temperature, cook_time_elapsed, timer_started, cook_start_time, device):
+def preparing(current_temperature, cook_time_elapsed, timer_started, cook_start_time, target_temperature, device):
     turn_on_heater()
     startup_time = time.time()
 
-    while current_temperature < TARGET_TEMPERATURE:
+    while current_temperature < target_temperature:
         print("heating up")
         data = device.vendor_request_in(vendor_requests.DS18B20_READ, length=2)
         current_temperature = (data[1] << 8 | data[0]) / 16.0
@@ -56,6 +57,7 @@ def preparing(current_temperature, cook_time_elapsed, timer_started, cook_start_
     if timer_started is False:
         cook_start_time = get_cook_start_time()
         timer_started = True
+        target_temperature = 81
         print("start time: " + str(cook_start_time))
         turn_off_heater()
         cooking(current_temperature, cook_time_elapsed, cook_start_time, device)
@@ -83,7 +85,7 @@ def cooking(current_temperature, cook_time_elapsed, cook_start_time, device):
     if cook_time_elapsed >= COOK_TIME:
         done()
     elif current_temperature <= MIN_TEMPERATURE:
-        preparing(current_temperature, cook_time_elapsed, True, cook_start_time, device)
+        preparing(current_temperature, cook_time_elapsed, True, cook_start_time, target_temperature, device)
 
 
 def done():

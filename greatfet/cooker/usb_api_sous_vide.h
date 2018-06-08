@@ -12,13 +12,14 @@
 extern volatile bool sous_vide_mode_enabled;
 
 void init(void);
-void preparing();
+void heating_up();
 void cooking();
 void done(void);
 void turn_on_heater(void);
 void turn_off_heater(void);
 uint32_t get_start_time(void);
 uint32_t get_time_elapsed();
+void turn_leds_on(void);
 void turn_leds_off(void);
 
 void sous_vide_mode(void);

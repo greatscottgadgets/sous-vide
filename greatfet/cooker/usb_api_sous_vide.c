@@ -46,13 +46,17 @@ void init_cook(void) {
 	// TODO: need to wait for button press to start cook process
 	// TODO: need to reset cook_completed to false on button press
 	if(!cook_completed) {
-		preparing();
+		heating_up();
+	}
+	else {
+		done();
 	}
 }
 
-void preparing() {
+void heating_up() {
 	turn_leds_off();
 	turn_on_heater();
+	led_on(LED1);
 
 	while(current_temperature < TARGET_TEMPERATURE && time_elapsed < COOK_TIME) {
 		// heating up
@@ -61,6 +65,7 @@ void preparing() {
 
 		if(timer_started) {
 			turn_leds_off();
+			led_on(LED1);
 			led_on(LED3);
 			// delay(DELAY_TIME);
 			time_elapsed = get_time_elapsed();	
@@ -108,13 +113,13 @@ void cooking() {
 		done();
 	}
 	else if(current_temperature <= MIN_TEMPERATURE) {
-		preparing();
+		heating_up();
 	}
 }
 
 void done(void) {
 	cook_completed = true;
-	init_cook();
+	turn_leds_on();
 }
 
 void turn_on_heater(void) {
@@ -134,6 +139,13 @@ uint32_t get_time_elapsed() {
 	uint32_t time_elapsed = current_time - start_time;
 
 	return time_elapsed;
+}
+
+void turn_leds_on(void) {
+	led_on(LED1);
+	led_on(LED2);
+	led_on(LED3);
+	led_on(LED4);
 }
 
 void turn_leds_off(void) {

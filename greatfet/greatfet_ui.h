@@ -3,8 +3,8 @@
 
 #include <stdint.h>
 
-void greatfet_ui_init(void) __attribute__((weak));
+void greatfet_ui_init(void);
 
-void greatfet_ui_setTemperature(uint64_t _temp) __attribute__((weak));
-void greatfet_ui_setTime(uint64_t _time) __attribute__((weak));
+void greatfet_ui_setTemperature(uint32_t _temp);
+void greatfet_ui_setTime(uint32_t _time);
 #endif /* GREATFET_UI_H */

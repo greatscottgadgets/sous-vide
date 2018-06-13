@@ -16,7 +16,6 @@
 
 // GPIO 2_2 is J2_P8 on greatfet
 static struct gpio_t heaters = GPIO(2, 2);
-volatile bool sous_vide_mode_enabled = true;
 
 #define MIN_TEMPERATURE 79
 #define MAX_TEMPERATURE 90
@@ -26,13 +25,14 @@ volatile bool sous_vide_mode_enabled = true;
 
 static uint32_t start_time = 0;		
 static uint32_t time_elapsed = 0;	
-static uint64_t current_temperature = 0;
-static uint64_t target_temperature = 85;
+static uint8_t current_temperature = 0;
+static uint8_t target_temperature = 85;
 static bool timer_started = false;
 static bool cook_completed = false;
 
-int16_t read_temperature(void)
+uint8_t read_temperature(void)
 {
+	scu_pinmux(SCU_PINMUX_GPIO5_8, SCU_GPIO_FAST | SCU_GPIO_PUP | SCU_CONF_FUNCTION4);	
 	int i;
 	uint8_t data[9];
 	one_wire_init_target();
@@ -48,7 +48,7 @@ int16_t read_temperature(void)
 		data[i] = one_wire_read();
 	}
 	one_wire_init_target();
-	return data[1] << 8 | data[0];
+	return (data[1] << 8 | data[0]) >> 4;
 }
 
 void turn_leds_on(void) {
@@ -98,7 +98,6 @@ void heating_up(void) {
 
 	while(current_temperature < target_temperature && time_elapsed < COOK_TIME) {
 		current_temperature = read_temperature();
-		current_temperature >>= 4;
 		greatfet_ui_setTemperature(current_temperature);
 
 		if(timer_started) {
@@ -106,9 +105,10 @@ void heating_up(void) {
 			led_on(LED1);
 			led_on(LED3);
 			// delay(DELAY_TIME);
-			time_elapsed = get_time_elapsed();	
+			time_elapsed = get_time_elapsed();
+			greatfet_ui_setTime(time_elapsed);	
 		}
-		delay(DELAY_TIME);
+		// delay(DELAY_TIME);
 	}
 	if(!timer_started) {
 		turn_leds_off();
@@ -121,6 +121,7 @@ void heating_up(void) {
 	else if(timer_started && time_elapsed < COOK_TIME) {
 		turn_leds_off();
 		time_elapsed = get_time_elapsed();
+		greatfet_ui_setTime(time_elapsed);
 		turn_off_heater();
 		cooking();
 	}
@@ -140,8 +141,8 @@ void cooking(void) {
 
 	while(current_temperature > MIN_TEMPERATURE && time_elapsed < COOK_TIME) {
 		time_elapsed = get_time_elapsed();
+		greatfet_ui_setTime(time_elapsed);	
 		current_temperature = read_temperature();
-		current_temperature >>= 4;
 		greatfet_ui_setTemperature(current_temperature);
 		// delay(DELAY_TIME);
 	}
@@ -157,7 +158,7 @@ void cooking(void) {
 	}
 }
 
-void init_cook(void) {
+void cook_init(void) {
 	scu_pinmux(SCU_PINMUX_GPIO2_2, SCU_GPIO_FAST | SCU_CONF_FUNCTION0);
 	gpio_output(&heaters); 
 	turn_leds_off();
@@ -178,6 +179,5 @@ void init_cook(void) {
 /* Start the creme brulee cook process
    This is called from the main loop. */
 void sous_vide_mode(void) {
-	init_cook();
+	cook_init();
 }
-

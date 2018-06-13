@@ -1,5 +1,22 @@
 /*
+ * Copyright 2016 Dominic Spill <dominicgs@gmail.com>
+ *
  * This file is part of GreatFET.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; see the file COPYING.  If not, write to
+ * the Free Software Foundation, Inc., 51 Franklin Street,
+ * Boston, MA 02110-1301, USA.
  */
 
 #include "greatfet_core.h"
@@ -112,46 +129,42 @@ void lcd_clear(void) {
 }
 
 #define CHAR_0 48
-static uint64_t temperature = 0;
-static uint64_t cook_time = 0;
-static bool temperature_changed = false;
-static bool time_changed = false;
+static uint32_t temperature = 0;
+static uint32_t cook_time = 0;
 
 void draw_screen(void) {
 	int group, j, i = 0;
-	uint64_t y = temperature;
+	uint64_t x = temperature;
+	uint64_t y = cook_time;
 	char line1[] = {'D', ':', 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
 	                0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20};
-	char line2_rx[] = {'T', ':', 0x20, 0x20, 0x20, 'V', ':', 0x20,
-	                0x20, 0x20, 'A', ':', 0x20, 0x20, 0x20, 0x20};
-	char line2_tx[] = {'V', ':', 0x20, 0x20, 0x20, 'A', ':', 0x20,
+	char line2[] = {'T', ':', 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
 	                0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20};
-	// char freq_str[] = {0x20, 0x20, 0x20, 0x20, 0x20,
-	//                    0x20, 0x20, 0x20, 0x20, 0x20};
 	char temp_str[] = {0x20, 0x20, 0x20, 0x20, 0x20,
 	                   0x20, 0x20, 0x20, 0x20, 0x20};
 	char time_str[] = {0x20, 0x20, 0x20, 0x20, 0x20,
 	                   0x20, 0x20, 0x20, 0x20, 0x20};
-	if(temperature_changed) {
-		// Temperature
-		while(y) {
-			temp_str[i++] = y % 10;
-			y = y / 10;
-		}
-		group = i % 3;
-		if(group == 0)
-			group = 3;
-		j = 2;
-		while(i) {
-			if(group) {
-				line1[j++] = temp_str[--i] + CHAR_0;
-				group--;
-			} else {
-				line1[j++] = ',';
-				group = 3;
-			}
-		}
+
+	// Temperature
+	while(x) {
+		temp_str[i++] = x % 10;
+		x = x / 10;
 	}
+	j = 2;
+	while(i) {
+		line1[j++] = temp_str[--i] + CHAR_0;
+	}
+
+	// Time
+	while(y) {
+		time_str[i++] = y % 10;
+		y = y / 10;
+	}
+	j = 2;
+	while(i) {
+		line2[j++] = time_str[--i] + CHAR_0;
+	}
+	
 
 	lcd_clear();
 	lcd_write(0x80);
@@ -160,9 +173,9 @@ void draw_screen(void) {
 	}
 	lcd_write(0xC0);
 	
-		for(i=0; i<16; i++) {
-			lcd_write_char(line2_rx[i]);
-		}
+	for(i=0; i<16; i++) {
+		lcd_write_char(line2[i]);
+	}
 
 }
 
@@ -206,14 +219,12 @@ void greatfet_ui_init(void) {
 	draw_screen();
 }
 
-void greatfet_ui_setTemperature(uint64_t _temp) {
+void greatfet_ui_setTemperature(uint32_t _temp) {
 	temperature = _temp;
-	temperature_changed = true;
 	draw_screen();
 }
 
-void greatfet_ui_setTime(uint64_t _time) {
+void greatfet_ui_setTime(uint32_t _time) {
 	cook_time = _time;
-	time_changed = true;
 	draw_screen();
 }

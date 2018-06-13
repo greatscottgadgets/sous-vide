@@ -15,22 +15,24 @@
 
 #include "pins.h"
 
+#include "greatfet_ui.h"
+
 #include <libopencm3/lpc43xx/scu.h>
 
 // GPIO 2_2 is J2_P8 on greatfet
 static struct gpio_t heaters = GPIO(2, 2);
 volatile bool sous_vide_mode_enabled = true;
 
-#define COOK_TIME 60
 #define MIN_TEMPERATURE 79
 #define MAX_TEMPERATURE 90
+#define COOK_TIME 3600
 #define NOW_SEC ((RTC_HRS * 3600) + (RTC_MIN * 60) + RTC_SEC)
 #define DELAY_TIME 40000000
 
-static int16_t target_temperature = 85;
 static uint32_t start_time = 0;		
 static uint32_t time_elapsed = 0;	
-static int16_t current_temperature = 0;
+static uint64_t current_temperature = 0;
+static uint64_t target_temperature = 85;
 static bool timer_started = false;
 static bool cook_completed = false;
 
@@ -38,6 +40,7 @@ void init_cook(void) {
 	scu_pinmux(SCU_PINMUX_GPIO2_2, SCU_GPIO_FAST | SCU_CONF_FUNCTION0);
 	gpio_output(&heaters); 
 	turn_leds_off();
+	greatfet_ui_init();
 
 	led_on(LED1);
 	led_on(LED2);
@@ -59,6 +62,7 @@ void heating_up() {
 	while(current_temperature < target_temperature && time_elapsed < COOK_TIME) {
 		current_temperature = read_temperature();
 		current_temperature >>= 4;
+		greatfet_ui_setTemperature(current_temperature);
 
 		if(timer_started) {
 			turn_leds_off();
@@ -73,7 +77,7 @@ void heating_up() {
 		turn_leds_off();
 		start_time = get_start_time();
 		timer_started = true;
-		target_temperature = 81;	// heat up to 85 initially, 82 for the rest of the cook
+		target_temperature = 81;	// heat up to 85 initially, 81 for the rest of the cook
 		turn_off_heater();
 		cooking();
 	}
@@ -101,7 +105,8 @@ void cooking() {
 		time_elapsed = get_time_elapsed();
 		current_temperature = read_temperature();
 		current_temperature >>= 4;
-		delay(DELAY_TIME);
+		greatfet_ui_setTemperature(current_temperature);
+		// delay(DELAY_TIME);
 	}
 	if(time_elapsed >= COOK_TIME) {
 		turn_leds_off();

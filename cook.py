@@ -20,12 +20,9 @@ MIN_TEMPERATURE = 78
 MAX_TEMPERATURE = 90
 
 target_temperature = 85
-
 cook_time_elapsed = 0
 cook_start_time = 0
-
 sleep_time = 10
-
 current_temperature = 0
 timer_started = False
 

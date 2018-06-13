@@ -9,6 +9,7 @@
 
 #include <greatfet_core.h>
 
+#include "sous_vide.h"
 
 int main(void) {
 	cpu_clock_init();
@@ -16,9 +17,7 @@ int main(void) {
 	pin_setup();
 	rtc_init();
 
-	while(true) {
-		;
-	}
+	sous_vide_mode();
 
 	return 0;
 }

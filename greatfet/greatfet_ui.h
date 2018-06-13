@@ -1,7 +1,6 @@
 #ifndef GREATFET_UI_H
 #define GREATFET_UI_H
 
-#include <rf_path.h>
 #include <stdint.h>
 
 void greatfet_ui_init(void) __attribute__((weak));

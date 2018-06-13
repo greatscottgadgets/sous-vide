@@ -2,22 +2,17 @@
  * This file is part of GreatFET
  */
 
-#include "usb_api_sous_vide.h"
-#include "usb_api_DS18B20.h"
-#include <libopencm3/lpc43xx/rtc.h>
 
+#include <libopencm3/lpc43xx/rtc.h>
+#include <libopencm3/lpc43xx/scu.h>
+
+#include <greatfet_core.h>
 #include <gpio.h>
 #include <gpio_lpc.h>
-
-#include "usb.h"
-#include "usb_queue.h"
-#include "usb_endpoint.h"
-
-#include "pins.h"
+#include <pins.h>
+#include <one_wire.h>
 
 #include "greatfet_ui.h"
-
-#include <libopencm3/lpc43xx/scu.h>
 
 // GPIO 2_2 is J2_P8 on greatfet
 static struct gpio_t heaters = GPIO(2, 2);
@@ -36,25 +31,67 @@ static uint64_t target_temperature = 85;
 static bool timer_started = false;
 static bool cook_completed = false;
 
-void init_cook(void) {
-	scu_pinmux(SCU_PINMUX_GPIO2_2, SCU_GPIO_FAST | SCU_CONF_FUNCTION0);
-	gpio_output(&heaters); 
-	turn_leds_off();
-	greatfet_ui_init();
-
-	led_on(LED1);
-	led_on(LED2);
-	// delay(DELAY_TIME);
-
-	if(!cook_completed) {
-		heating_up();
+int16_t read_temperature(void)
+{
+	int i;
+	uint8_t data[9];
+	one_wire_init_target();
+    one_wire_write(0xCC); // Skip ROM command
+    one_wire_write(0x44); // Read temperature
+	delay(22500000); // 750 ms for 12 bit temperature conversion
+	one_wire_init_target();
+    one_wire_write(0xCC); // Skip ROM command
+    one_wire_write(0xBE); // Read scratchpad area
+	delay(1000);
+	for(i=0; i<9; i++) {
+		// scratchpad is 9 bytes
+		data[i] = one_wire_read();
 	}
-	else {
-		done();
-	}
+	one_wire_init_target();
+	return data[1] << 8 | data[0];
 }
 
-void heating_up() {
+void turn_leds_on(void) {
+	led_on(LED1);
+	led_on(LED2);
+	led_on(LED3);
+	led_on(LED4);
+}
+
+void turn_leds_off(void) {
+	led_off(LED1);
+	led_off(LED2);
+	led_off(LED3);
+	led_off(LED4);
+}
+
+void turn_on_heater(void) {
+	gpio_write(&heaters, 1);
+}
+
+void turn_off_heater(void) {
+	gpio_write(&heaters, 0);
+}
+
+uint32_t get_start_time(void) {
+	return NOW_SEC;
+}
+
+uint32_t get_time_elapsed(void) {
+	uint32_t current_time = NOW_SEC;
+	uint32_t time_elapsed = current_time - start_time;
+
+	return time_elapsed;
+}
+
+void done(void) {
+	cook_completed = true;
+	turn_leds_on();
+}
+
+void cooking(void);
+
+void heating_up(void) {
 	turn_leds_off();
 	turn_on_heater();
 	led_on(LED1);
@@ -97,7 +134,7 @@ void heating_up() {
 	}
 }
 
-void cooking() {
+void cooking(void) {
 	turn_leds_off();
 	led_on(LED2);
 
@@ -120,42 +157,22 @@ void cooking() {
 	}
 }
 
-void done(void) {
-	cook_completed = true;
-	turn_leds_on();
-}
+void init_cook(void) {
+	scu_pinmux(SCU_PINMUX_GPIO2_2, SCU_GPIO_FAST | SCU_CONF_FUNCTION0);
+	gpio_output(&heaters); 
+	turn_leds_off();
+	greatfet_ui_init();
 
-void turn_on_heater(void) {
-	gpio_write(&heaters, 1);
-}
-
-void turn_off_heater(void) {
-	gpio_write(&heaters, 0);
-}
-
-uint32_t get_start_time(void) {
-	return NOW_SEC;
-}
-
-uint32_t get_time_elapsed() {
-	uint32_t current_time = NOW_SEC;
-	uint32_t time_elapsed = current_time - start_time;
-
-	return time_elapsed;
-}
-
-void turn_leds_on(void) {
 	led_on(LED1);
 	led_on(LED2);
-	led_on(LED3);
-	led_on(LED4);
-}
+	// delay(DELAY_TIME);
 
-void turn_leds_off(void) {
-	led_off(LED1);
-	led_off(LED2);
-	led_off(LED3);
-	led_off(LED4);
+	if(!cook_completed) {
+		heating_up();
+	}
+	else {
+		done();
+	}
 }
 
 /* Start the creme brulee cook process
@@ -164,13 +181,3 @@ void sous_vide_mode(void) {
 	init_cook();
 }
 
-usb_request_status_t usb_vendor_request_sous_vide_start(
-	usb_endpoint_t* const endpoint, const usb_transfer_stage_t stage)
-{
-	if (stage == USB_TRANSFER_STAGE_SETUP) {
-		sous_vide_mode_enabled = true;
-    // led_off(HEARTBEAT_LED);
-		usb_transfer_schedule_ack(endpoint->in);
-	}
-	return USB_REQUEST_STATUS_OK;
-}

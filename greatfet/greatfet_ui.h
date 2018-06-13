@@ -7,4 +7,5 @@ void greatfet_ui_init(void);
 
 void greatfet_ui_setTemperature(uint32_t _temp);
 void greatfet_ui_setTime(uint32_t _time);
+void greatfet_ui_setMode(char _mode);
 #endif /* GREATFET_UI_H */

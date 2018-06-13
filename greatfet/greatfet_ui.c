@@ -129,14 +129,17 @@ void lcd_clear(void) {
 }
 
 #define CHAR_0 48
+#define CHAR_A 65
 static uint32_t temperature = 0;
 static uint32_t cook_time = 0;
+// static uint32_t cook_mode = 0;
+static char cook_mode = ' ';
 
 void draw_screen(void) {
 	int group, j, i = 0;
 	uint64_t x = temperature;
 	uint64_t y = cook_time;
-	char line1[] = {'D', ':', 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
+	char line1[] = {'D', ':', 0x20, 0x20, 0x20, 0x20, 'M', ':',
 	                0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20};
 	char line2[] = {'T', ':', 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
 	                0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20};
@@ -144,7 +147,7 @@ void draw_screen(void) {
 	                   0x20, 0x20, 0x20, 0x20, 0x20};
 	char time_str[] = {0x20, 0x20, 0x20, 0x20, 0x20,
 	                   0x20, 0x20, 0x20, 0x20, 0x20};
-
+	// char cook_mode_str[] = {0x20, 0x20, 0x20, 0x20};
 	// Temperature
 	while(x) {
 		temp_str[i++] = x % 10;
@@ -164,7 +167,38 @@ void draw_screen(void) {
 	while(i) {
 		line2[j++] = time_str[--i] + CHAR_0;
 	}
-	
+
+	// Mode
+	if(cook_mode == ' ') {
+		line1[8] = 'N';
+		line1[9] = 'N';
+		line1[10] = 'N';
+		line1[11] = 'N';
+	}
+	else if(cook_mode == 'H') {
+		line1[8] = 'H';
+		line1[9] = 'E';
+		line1[10] = 'A';
+		line1[11] = 'T';
+	}
+	else if(cook_mode == 'C') {
+		line1[8] = 'C';
+		line1[9] = 'O';
+		line1[10] = 'O';
+		line1[11] = 'K';
+	}
+	else if(cook_mode == 'D') {
+		line1[8] = 'D';
+		line1[9] = 'O';
+		line1[10] = 'N';
+		line1[11] = 'E';
+	}
+	else {
+		line1[8] = 'X';
+		line1[9] = 'X';
+		line1[10] = 'X';
+		line1[11] = 'X';
+	}
 
 	lcd_clear();
 	lcd_write(0x80);
@@ -226,5 +260,10 @@ void greatfet_ui_setTemperature(uint32_t _temp) {
 
 void greatfet_ui_setTime(uint32_t _time) {
 	cook_time = _time;
+	draw_screen();
+}
+
+void greatfet_ui_setMode(char _mode) {
+	cook_mode = _mode;
 	draw_screen();
 }

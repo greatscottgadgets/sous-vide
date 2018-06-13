@@ -87,6 +87,7 @@ uint32_t get_time_elapsed(void) {
 void done(void) {
 	cook_completed = true;
 	turn_leds_on();
+	greatfet_ui_setMode('D');
 }
 
 void cooking(void);
@@ -99,6 +100,7 @@ void heating_up(void) {
 	while(current_temperature < target_temperature && time_elapsed < COOK_TIME) {
 		current_temperature = read_temperature();
 		greatfet_ui_setTemperature(current_temperature);
+		greatfet_ui_setMode('H');
 
 		if(timer_started) {
 			turn_leds_off();
@@ -144,6 +146,7 @@ void cooking(void) {
 		greatfet_ui_setTime(time_elapsed);	
 		current_temperature = read_temperature();
 		greatfet_ui_setTemperature(current_temperature);
+		greatfet_ui_setMode('C');
 		// delay(DELAY_TIME);
 	}
 	if(time_elapsed >= COOK_TIME) {

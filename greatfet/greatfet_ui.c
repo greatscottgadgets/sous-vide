@@ -129,10 +129,8 @@ void lcd_clear(void) {
 }
 
 #define CHAR_0 48
-#define CHAR_A 65
 static uint32_t temperature = 0;
 static uint32_t cook_time = 0;
-// static uint32_t cook_mode = 0;
 static char cook_mode = ' ';
 
 void draw_screen(void) {
@@ -147,7 +145,7 @@ void draw_screen(void) {
 	                   0x20, 0x20, 0x20, 0x20, 0x20};
 	char time_str[] = {0x20, 0x20, 0x20, 0x20, 0x20,
 	                   0x20, 0x20, 0x20, 0x20, 0x20};
-	// char cook_mode_str[] = {0x20, 0x20, 0x20, 0x20};
+	                   
 	// Temperature
 	while(x) {
 		temp_str[i++] = x % 10;

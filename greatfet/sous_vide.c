@@ -36,12 +36,12 @@ uint8_t read_temperature(void)
 	int i;
 	uint8_t data[9];
 	one_wire_init_target();
-    one_wire_write(0xCC); // Skip ROM command
-    one_wire_write(0x44); // Read temperature
+	one_wire_write(0xCC); // Skip ROM command
+	one_wire_write(0x44); // Read temperature
 	delay(22500000); // 750 ms for 12 bit temperature conversion
 	one_wire_init_target();
-    one_wire_write(0xCC); // Skip ROM command
-    one_wire_write(0xBE); // Read scratchpad area
+	one_wire_write(0xCC); // Skip ROM command
+	one_wire_write(0xBE); // Read scratchpad area
 	delay(1000);
 	for(i=0; i<9; i++) {
 		// scratchpad is 9 bytes
@@ -88,6 +88,12 @@ void done(void) {
 	cook_completed = true;
 	turn_leds_on();
 	greatfet_ui_setMode('D');
+
+	while(true) {
+		current_temperature = read_temperature();
+		greatfet_ui_setTemperature(current_temperature);
+		delay(DELAY_TIME);
+	}
 }
 
 void cooking(void);

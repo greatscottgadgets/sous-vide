@@ -26,7 +26,7 @@ static struct gpio_t heaters = GPIO(2, 2);
 static uint32_t start_time = 0;		
 static uint32_t time_elapsed = 0;	
 static uint8_t current_temperature = 0;
-static uint8_t target_temperature = 82;
+static uint8_t target_temperature = 85;
 static bool timer_started = false;
 static bool cook_completed = false;
 
@@ -122,7 +122,7 @@ void heating_up(void) {
 		turn_leds_off();
 		start_time = get_start_time();
 		timer_started = true;
-		target_temperature = 81;	// heat up to 82 initially, 81 for the rest of the cook
+		target_temperature = 81;	// heat up to 85 initially, 81 for the rest of the cook
 		turn_off_heater();
 		cooking();
 	}

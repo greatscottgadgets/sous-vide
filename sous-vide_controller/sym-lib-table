@@ -1,3 +1,4 @@
 (sym_lib_table
   (lib (name gsg-symbols)(type Legacy)(uri /home/yhetti/sous-vide/sous-vide/gsg-kicad-lib/gsg-symbols.lib)(options "")(descr ""))
+  (lib (name sous-vide_controller-rescue)(type Legacy)(uri ${KIPRJMOD}/sous-vide_controller-rescue.lib)(options "")(descr ""))
 )
